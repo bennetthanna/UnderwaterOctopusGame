@@ -16,6 +16,7 @@ class Tutorial < Gosu::Window
     @seashells = Array.new
     @font = Gosu::Font.new(20)
     @counter = 0
+    @doctor = Doctor.new
   end
 
   # called 60 times per second
@@ -35,6 +36,7 @@ class Tutorial < Gosu::Window
     @player.move
     @player.collect_seashells(@seashells)
     @player.hit_shark(@shark)
+    @player.visit_doctor(@doctor)
 
     if rand(100) < 4 and @seashells.size < 50
       @seashells.push(Seashell.new(@seashell_anim))
@@ -50,6 +52,7 @@ class Tutorial < Gosu::Window
   def draw
     @player.draw
     @shark.draw
+    @doctor.draw
     # upper left corner drawn at (0,0) with z ordering of 0
     # higher z = drawn on top of lower z
     @background_image.draw(0, 0, ZOrder::BACKGROUND)
@@ -70,6 +73,20 @@ class Tutorial < Gosu::Window
   end
 
 end
+
+class Doctor
+  attr_reader :x, :y
+  def initialize
+    @image = Gosu::Image.new("doctor.png")
+    @x = 1000
+    @y = 400
+  end
+
+  def draw
+    @image.draw(@x, @y, ZOrder::PLAYER)
+  end
+end
+
 
 class Shark
   attr_reader :x, :y
@@ -150,6 +167,13 @@ class Player
   def hit_shark(shark)
     if Gosu.distance(@x, @y, shark.x, shark.y) < 35
       @health -= 1
+    end
+  end
+
+  def visit_doctor(doctor)
+    if Gosu.distance(@x, @y, doctor.x, doctor.y) < 35
+      @score -= 1
+      @health += 1
     end
   end
 
