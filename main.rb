@@ -15,7 +15,6 @@ class Tutorial < Gosu::Window
     @seashell_anim = Gosu::Image.load_tiles("seashell.png", 40, 38)
     @seashells = Array.new
     @font = Gosu::Font.new(20)
-    @counter = 0
     @doctor = Doctor.new
   end
 
@@ -23,7 +22,6 @@ class Tutorial < Gosu::Window
   # contain main game logic
     # ex: moving objects, testing for collisions
   def update
-    @counter = @counter + 1
     if Gosu.button_down? Gosu::KB_LEFT or Gosu::button_down? Gosu::GP_LEFT
       @player.turn_left
     end
@@ -83,7 +81,9 @@ class Doctor
   end
 
   def draw
-    @image.draw(@x, @y, ZOrder::PLAYER)
+    # puts the center at (x,y) instead of the upper corner
+    # makes collisions more central and accurate
+    @image.draw_rot(@x, @y, ZOrder::PLAYER, 0)
   end
 end
 
@@ -103,11 +103,11 @@ class Shark
   end
 
   def draw
-    @image.draw(@x, @y, ZOrder::PLAYER)
+    @image.draw_rot(@x, @y, ZOrder::PLAYER, 0)
   end
 
   def update
-    @image.draw(@x, @y, ZOrder::PLAYER)
+    @image.draw_rot(@x, @y, ZOrder::PLAYER, 0)
   end
 
 end
@@ -165,13 +165,13 @@ class Player
   end
 
   def hit_shark(shark)
-    if Gosu.distance(@x, @y, shark.x, shark.y) < 35
+    if Gosu.distance(@x, @y, shark.x, shark.y) < 50
       @health -= 1
     end
   end
 
   def visit_doctor(doctor)
-    if Gosu.distance(@x, @y, doctor.x, doctor.y) < 35
+    if Gosu.distance(@x, @y, doctor.x, doctor.y) < 50
       @score -= 1
       @health += 1
     end
