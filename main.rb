@@ -4,7 +4,7 @@ require 'gosu'
 
 class Tutorial < Gosu::Window
 	def initialize
-    # create a 640 x 480 pixel large window
+    # create a 1280 x 720 pixel large window
     super 1280, 720
     # title bar
     self.caption = "Game"
@@ -18,6 +18,7 @@ class Tutorial < Gosu::Window
     @powerups = Array.new
     @font = Gosu::Font.new(20)
     @doctor = Doctor.new
+    @bomb = Bomb.new
     @counter = 0
   end
 
@@ -39,6 +40,7 @@ class Tutorial < Gosu::Window
     @player.collect_powerups(@powerups)
     @player.hit_shark(@shark)
     @player.visit_doctor(@doctor)
+    @player.hit_bomb(@bomb)
     @counter += 1
 
     if rand(100) < 4 and @seashells.size < 50
@@ -48,7 +50,12 @@ class Tutorial < Gosu::Window
     # every 10 seconds there's a 50% chance a new health powerup will appear
     # if there are none already on the screen
     if @counter % 600 == 0 and @powerups.size < 1 and rand(100) < 50
-      @powerups.push(Health_Powerup.new(@health_powerup_animation))
+      @powerups.push(HealthPowerup.new(@health_powerup_animation))
+    end
+
+    # every 5 seconds move the bomb
+    if @counter % 300 == 0
+      @bomb.move
     end
 
     @shark.move_left
@@ -62,6 +69,7 @@ class Tutorial < Gosu::Window
     @player.draw
     @shark.draw
     @doctor.draw
+    @bomb.draw
     # upper left corner drawn at (0,0) with z ordering of 0
     # higher z = drawn on top of lower z
     @background_image.draw(0, 0, ZOrder::BACKGROUND)
@@ -96,9 +104,32 @@ class Doctor
   end
 end
 
+class Bomb
+  attr_reader :x, :y
+
+  def initialize
+    @image = Gosu::Image.new("bomb.png")
+    @x = rand * 1200
+    @y = rand * 700
+  end
+
+  def draw
+    @image.draw_rot(@x, @y, ZOrder::PLAYER, 0)
+  end
+
+  def move
+    @x = rand * 1200
+    @y = rand * 700
+  end
+
+  def update
+    @image.draw_rot(@x, @y, ZOrder::PLAYER, 0)
+  end
+end
 
 class Shark
   attr_reader :x, :y
+
   def initialize
     @image = Gosu::Image.new("shark2.png")
     @x = 100
@@ -186,6 +217,12 @@ class Player
     end
   end
 
+  def hit_bomb(bomb)
+    if Gosu.distance(@x, @y, bomb.x, bomb.y) < 50
+      @font.draw("GAME OVER", 640, 360, ZOrder::UI, 1.0, 1.0, Gosu::Color::BLACK)
+    end
+  end
+
   def collect_seashells(seashells)
     seashells.reject! do |seashell| 
       if Gosu.distance(@x, @y, seashell.x, seashell.y) < 35
@@ -229,7 +266,7 @@ class Seashell
   end
 end
 
-class Health_Powerup
+class HealthPowerup
   attr_reader :x, :y
 
   def initialize(animation)
