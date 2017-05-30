@@ -13,9 +13,12 @@ class Tutorial < Gosu::Window
     @shark = Shark.new
     @player.warp(640, 360)
     @seashell_anim = Gosu::Image.load_tiles("seashell.png", 40, 38)
+    @health_powerup_animation = Gosu::Image.load_tiles("health_powerup.png", 50, 54)
     @seashells = Array.new
+    @powerups = Array.new
     @font = Gosu::Font.new(20)
     @doctor = Doctor.new
+    @counter = 0
   end
 
   # called 60 times per second
@@ -33,11 +36,19 @@ class Tutorial < Gosu::Window
     end
     @player.move
     @player.collect_seashells(@seashells)
+    @player.collect_powerups(@powerups)
     @player.hit_shark(@shark)
     @player.visit_doctor(@doctor)
+    @counter += 1
 
     if rand(100) < 4 and @seashells.size < 50
       @seashells.push(Seashell.new(@seashell_anim))
+    end
+
+    # every 10 seconds there's a 50% chance a new health powerup will appear
+    # if there are none already on the screen
+    if @counter % 600 == 0 and @powerups.size < 1 and rand(100) < 50
+      @powerups.push(Health_Powerup.new(@health_powerup_animation))
     end
 
     @shark.move_left
@@ -55,11 +66,9 @@ class Tutorial < Gosu::Window
     # higher z = drawn on top of lower z
     @background_image.draw(0, 0, ZOrder::BACKGROUND)
     @seashells.each { |seashell| seashell.draw }
+    @powerups.each { |powerup| powerup.draw }
     @font.draw("Score: #{@player.score}", 10, 10, ZOrder::UI, 1.0, 1.0, Gosu::Color::BLACK)
     @font.draw("Health: #{@player.health}", 10, 30, ZOrder::UI, 1.0, 1.0, Gosu::Color::BLACK)
-    if (@shark.x == @player.x and @shark.y == @player.y)
-      @font.draw("OH NO", 300, 300, ZOrder::UI, 1.0, 1.0, Gosu::Color::BLACK)
-    end
   end
 
   def button_down(id)
@@ -188,6 +197,16 @@ class Player
     end
   end
 
+  def collect_powerups(powerups)
+    powerups.reject! do |powerup|
+      if Gosu.distance(@x, @y, powerup.x, powerup.y) < 35
+        @health += 50
+        true
+      else
+        false
+      end
+    end
+  end
 end
 
 module ZOrder
@@ -209,6 +228,22 @@ class Seashell
     # img.draw(@x - img.width / 2.0, @y - img.height / 2.0, ZOrder::SEASHELLS, 1, 1, @color, :add)
   end
 end
+
+class Health_Powerup
+  attr_reader :x, :y
+
+  def initialize(animation)
+    @animation = animation
+    @x = rand * 1200
+    @y = rand * 700
+  end
+
+  def draw
+    img = @animation[Gosu.milliseconds / 100 % @animation.size]
+    img.draw_rot(@x, @y, 0, 50 * Math.sin(Gosu.milliseconds / 133.7))
+  end
+end
+
 # create a window and call its show method
 # main loop
 Tutorial.new.show
