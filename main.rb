@@ -1,6 +1,6 @@
 require 'gosu'
 
-# https://leanpub.com/developing-games-with-ruby/read
+# maybe have some powerups disappear from the screen after a certain amount of time
 
 class Tutorial < Gosu::Window
 	def initialize
@@ -14,6 +14,7 @@ class Tutorial < Gosu::Window
     @player.warp(640, 360)
     @seashell_anim = Gosu::Image.load_tiles("seashell.png", 40, 38)
     @health_powerup_animation = Gosu::Image.load_tiles("health_powerup.png", 50, 54)
+    @double_points_animation = Gosu::Image.load_tiles("double_points.png", 50, 50)
     @seashells = Array.new
     @powerups = Array.new
     @font = Gosu::Font.new(20)
@@ -43,14 +44,18 @@ class Tutorial < Gosu::Window
     @player.hit_bomb(@bomb)
     @counter += 1
 
-    if rand(100) < 4 and @seashells.size < 50
+    if rand(100) < 4 and @seashells.size < 35
       @seashells.push(Seashell.new(@seashell_anim))
     end
 
     # every 10 seconds there's a 50% chance a new health powerup will appear
     # if there are none already on the screen
-    if @counter % 600 == 0 and @powerups.size < 1 and rand(100) < 50
+    if @counter % 600 == 0 and @powerups.size < 2 and rand(100) < 50
       @powerups.push(HealthPowerup.new(@health_powerup_animation))
+    end
+
+    if @counter % 660 == 0 and @powerups.size < 2 and rand(100) < 50
+      @powerups.push(DoublePointsPowerup.new(@double_points_animation))
     end
 
     # every 5 seconds move the bomb
@@ -237,8 +242,13 @@ class Player
   def collect_powerups(powerups)
     powerups.reject! do |powerup|
       if Gosu.distance(@x, @y, powerup.x, powerup.y) < 35
-        @health += 50
-        true
+        if powerup.is_a?(HealthPowerup)
+          @health += 50
+          true
+        elsif powerup.is_a?(DoublePointsPowerup)
+          @score *= 2
+          true
+        end
       else
         false
       end
@@ -267,6 +277,21 @@ class Seashell
 end
 
 class HealthPowerup
+  attr_reader :x, :y
+
+  def initialize(animation)
+    @animation = animation
+    @x = rand * 1200
+    @y = rand * 700
+  end
+
+  def draw
+    img = @animation[Gosu.milliseconds / 100 % @animation.size]
+    img.draw_rot(@x, @y, 0, 50 * Math.sin(Gosu.milliseconds / 133.7))
+  end
+end
+
+class DoublePointsPowerup
   attr_reader :x, :y
 
   def initialize(animation)
