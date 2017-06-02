@@ -1,9 +1,7 @@
 require 'gosu'
 
-# TO DO: powerups disappear from the screen after a certain amount of time
 # TO DO: make game over screen and possibly start game screen
 # TO DO: add logic for when health goes below 0
-# TO DO: add logic for score not being able to go below 0 to visit doctor
 
 class Tutorial < Gosu::Window
 	def initialize
@@ -220,7 +218,7 @@ class Player
   end
 
   def visit_doctor(doctor)
-    if Gosu.distance(@x, @y, doctor.x, doctor.y) < 50
+    if Gosu.distance(@x, @y, doctor.x, doctor.y) < 50 and @score > 0
       @score -= 1
       @health += 1
     end
