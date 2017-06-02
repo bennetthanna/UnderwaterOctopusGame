@@ -16,6 +16,7 @@ class Tutorial < Gosu::Window
     @seashell_animation = Gosu::Image.load_tiles("seashell.png", 40, 38)
     @health_powerup_animation = Gosu::Image.load_tiles("health_powerup.png", 50, 54)
     @double_points_animation = Gosu::Image.load_tiles("double_points.png", 50, 50)
+    @magnet_powerup_animation = Gosu::Image.load_tiles("magnet.png", 50, 53)
     @seashells = Array.new
     @powerups = Array.new
     @font = Gosu::Font.new(20)
@@ -39,7 +40,7 @@ class Tutorial < Gosu::Window
     end
     @player.move
     @player.collect_seashells(@seashells)
-    @player.collect_powerups(@powerups)
+    @player.collect_powerups(@powerups, @seashells)
     @player.hit_shark(@shark)
     @player.visit_doctor(@doctor)
     @player.hit_bomb(@bomb)
@@ -58,6 +59,10 @@ class Tutorial < Gosu::Window
 
     if @counter % 1200 == 0 and (@powerups.include?(DoublePointsPowerup) != true) and rand(100) < 50
       @powerups.push(DoublePointsPowerup.new(@double_points_animation))
+    end
+
+    if @counter % 1800 == 0 and (@powerups.include?(MagnetPowerup) != true) and rand(100) < 30
+      @powerups.push(MagnetPowerup.new(@magnet_powerup_animation))
     end
 
     # every 5 seconds move the bomb
@@ -100,8 +105,8 @@ class Doctor
   attr_reader :x, :y
   def initialize
     @image = Gosu::Image.new("doctor.png")
-    @x = 1000
-    @y = 400
+    @x = 350
+    @y = 550
   end
 
   def draw
@@ -211,6 +216,12 @@ class Player
     @health
   end
 
+  def game_over
+    if @health < 0
+      puts "Health: GAME OVER"
+    end
+  end
+
   def hit_shark(shark)
     if Gosu.distance(@x, @y, shark.x, shark.y) < 50
       @health -= 1
@@ -226,7 +237,7 @@ class Player
 
   def hit_bomb(bomb)
     if Gosu.distance(@x, @y, bomb.x, bomb.y) < 50
-      puts "GAME OVER"
+      puts "Bomb: GAME OVER"
     end
   end
 
@@ -241,7 +252,7 @@ class Player
     end
   end
 
-  def collect_powerups(powerups)
+  def collect_powerups(powerups, seashells)
     powerups.reject! do |powerup|
       if Gosu.distance(@x, @y, powerup.x, powerup.y) < 35
         if powerup.is_a?(HealthPowerup)
@@ -250,6 +261,9 @@ class Player
         elsif powerup.is_a?(DoublePointsPowerup)
           @score *= 2
           true
+        elsif powerup.is_a?(MagnetPowerup)
+          @score += (seashells.size * 10)
+          seashells.clear
         end
       elsif powerup.timer > 600
         true  
@@ -305,6 +319,30 @@ class HealthPowerup
 end
 
 class DoublePointsPowerup
+  attr_reader :x, :y
+
+  def initialize(animation)
+    @animation = animation
+    @x = rand * 1200
+    @y = rand * 700
+    @timer = 0
+  end
+
+  def draw
+    img = @animation[Gosu.milliseconds / 100 % @animation.size]
+    img.draw_rot(@x, @y, 0, 50 * Math.sin(Gosu.milliseconds / 133.7))
+  end
+
+  def timer
+    @timer
+  end
+
+  def update
+    @timer += 1
+  end
+end
+
+class MagnetPowerup
   attr_reader :x, :y
 
   def initialize(animation)
