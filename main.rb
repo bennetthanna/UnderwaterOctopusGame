@@ -1,18 +1,21 @@
 require 'gosu'
 
-# maybe have some powerups disappear from the screen after a certain amount of time
+# TO DO: powerups disappear from the screen after a certain amount of time
+# TO DO: make game over screen and possibly start game screen
+# TO DO: add logic for when health goes below 0
+# TO DO: add logic for score not being able to go below 0 to visit doctor
 
 class Tutorial < Gosu::Window
 	def initialize
     # create a 1280 x 720 pixel large window
     super 1280, 720
     # title bar
-    self.caption = "Game"
+    self.caption = "Octopus Adventure"
     @background_image = Gosu::Image.new("underwater2.png", :tileable => true)
     @player = Player.new
     @shark = Shark.new
     @player.warp(640, 360)
-    @seashell_anim = Gosu::Image.load_tiles("seashell.png", 40, 38)
+    @seashell_animation = Gosu::Image.load_tiles("seashell.png", 40, 38)
     @health_powerup_animation = Gosu::Image.load_tiles("health_powerup.png", 50, 54)
     @double_points_animation = Gosu::Image.load_tiles("double_points.png", 50, 50)
     @seashells = Array.new
@@ -43,18 +46,19 @@ class Tutorial < Gosu::Window
     @player.visit_doctor(@doctor)
     @player.hit_bomb(@bomb)
     @counter += 1
+    @powerups.each { |powerup| powerup.update }
 
     if rand(100) < 4 and @seashells.size < 35
-      @seashells.push(Seashell.new(@seashell_anim))
+      @seashells.push(Seashell.new(@seashell_animation))
     end
 
     # every 10 seconds there's a 50% chance a new health powerup will appear
     # if there are none already on the screen
-    if @counter % 600 == 0 and @powerups.size < 2 and rand(100) < 50
+    if @counter % 600 == 0 and (@powerups.include?(HealthPowerup) != true) and rand(100) < 50
       @powerups.push(HealthPowerup.new(@health_powerup_animation))
     end
 
-    if @counter % 660 == 0 and @powerups.size < 2 and rand(100) < 50
+    if @counter % 1200 == 0 and (@powerups.include?(DoublePointsPowerup) != true) and rand(100) < 50
       @powerups.push(DoublePointsPowerup.new(@double_points_animation))
     end
 
@@ -224,7 +228,7 @@ class Player
 
   def hit_bomb(bomb)
     if Gosu.distance(@x, @y, bomb.x, bomb.y) < 50
-      @font.draw("GAME OVER", 640, 360, ZOrder::UI, 1.0, 1.0, Gosu::Color::BLACK)
+      puts "GAME OVER"
     end
   end
 
@@ -249,6 +253,8 @@ class Player
           @score *= 2
           true
         end
+      elsif powerup.timer > 600
+        true  
       else
         false
       end
@@ -283,11 +289,20 @@ class HealthPowerup
     @animation = animation
     @x = rand * 1200
     @y = rand * 700
+    @timer = 0
   end
 
   def draw
     img = @animation[Gosu.milliseconds / 100 % @animation.size]
     img.draw_rot(@x, @y, 0, 50 * Math.sin(Gosu.milliseconds / 133.7))
+  end
+
+  def timer
+    @timer
+  end
+
+  def update
+    @timer += 1
   end
 end
 
@@ -298,11 +313,20 @@ class DoublePointsPowerup
     @animation = animation
     @x = rand * 1200
     @y = rand * 700
+    @timer = 0
   end
 
   def draw
     img = @animation[Gosu.milliseconds / 100 % @animation.size]
     img.draw_rot(@x, @y, 0, 50 * Math.sin(Gosu.milliseconds / 133.7))
+  end
+
+  def timer
+    @timer
+  end
+
+  def update
+    @timer += 1
   end
 end
 
