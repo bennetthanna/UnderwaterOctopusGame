@@ -1,8 +1,5 @@
 require 'gosu'
 
-# TO DO: make game over screen and possibly start game screen
-# TO DO: add logic for when health goes below 0
-
 class Tutorial < Gosu::Window
 	def initialize
     # create a 1280 x 720 pixel large window
@@ -10,7 +7,9 @@ class Tutorial < Gosu::Window
     # title bar
     self.caption = "Octopus Adventure"
     @game_over_screen = GameOverScreen.new
-    @game_screen = GameScreen.new
+    @play_screen = PlayScreen.new
+    @start_screen = StartScreen.new
+    @current_view = @start_screen
     @game_over = false
     @player = Player.new
     @shark = Shark.new
@@ -31,6 +30,9 @@ class Tutorial < Gosu::Window
   # contain main game logic
     # ex: moving objects, testing for collisions
   def update
+    if Gosu.button_down? Gosu::KB_RETURN and @current_view == @start_screen
+      @current_view = @play_screen
+    end
     if Gosu.button_down? Gosu::KB_LEFT or Gosu::button_down? Gosu::GP_LEFT
       @player.turn_left
     end
@@ -76,6 +78,7 @@ class Tutorial < Gosu::Window
 
     if @player.health < 0 or Gosu.distance(@player.x, @player.y, @bomb.x, @bomb.y) < 50
       @game_over = true
+      @current_view = @game_over_screen
     end
   end
 
@@ -89,12 +92,12 @@ class Tutorial < Gosu::Window
     @bomb.draw
     @seashells.each { |seashell| seashell.draw }
     @powerups.each { |powerup| powerup.draw }
-    if @game_over == false
-      @game_screen.draw
+
+    @current_view.draw
+    if @current_view == @play_screen
       @font.draw("Score: #{@player.score}", 10, 10, ZOrder::UI, 1.0, 1.0, Gosu::Color::BLACK)
       @font.draw("Health: #{@player.health}", 10, 30, ZOrder::UI, 1.0, 1.0, Gosu::Color::BLACK)
-    else
-      @game_over_screen.draw
+    elsif @current_view == @game_over_screen
       @font.draw("Score: #{@player.score}", 500, 360, ZOrder::UI, 1.0, 1.0, Gosu::Color::BLACK)
     end
   end
@@ -386,7 +389,7 @@ class GameOverScreen
   end
 end
 
-class GameScreen
+class PlayScreen
   def initialize
     @background_image = Gosu::Image.new("underwater2.png", :tileable => true)
   end
@@ -395,6 +398,16 @@ class GameScreen
     # upper left corner drawn at (0,0) with z ordering of 0
     # higher z = drawn on top of lower z
     @background_image.draw(0, 0, ZOrder::BACKGROUND)
+  end
+end
+
+class StartScreen
+  def initialize
+    @background_image = Gosu::Image.new("underwater.png")
+  end
+
+  def draw
+    @background_image.draw(0, 0, ZOrder::UI)
   end
 end
 
