@@ -9,7 +9,9 @@ class Tutorial < Gosu::Window
     super 1280, 720
     # title bar
     self.caption = "Octopus Adventure"
-    @background_image = Gosu::Image.new("underwater2.png", :tileable => true)
+    @game_over_screen = GameOverScreen.new
+    @game_screen = GameScreen.new
+    @game_over = false
     @player = Player.new
     @shark = Shark.new
     @player.warp(640, 360)
@@ -19,10 +21,10 @@ class Tutorial < Gosu::Window
     @magnet_powerup_animation = Gosu::Image.load_tiles("magnet.png", 50, 53)
     @seashells = Array.new
     @powerups = Array.new
-    @font = Gosu::Font.new(20)
     @doctor = Doctor.new
     @bomb = Bomb.new
     @counter = 0
+    @font = Gosu::Font.new(20)
   end
 
   # called 60 times per second
@@ -72,6 +74,9 @@ class Tutorial < Gosu::Window
 
     @shark.move_left
 
+    if @player.health < 0 or Gosu.distance(@player.x, @player.y, @bomb.x, @bomb.y) < 50
+      @game_over = true
+    end
   end
 
   # called 60 times per second
@@ -82,13 +87,16 @@ class Tutorial < Gosu::Window
     @shark.draw
     @doctor.draw
     @bomb.draw
-    # upper left corner drawn at (0,0) with z ordering of 0
-    # higher z = drawn on top of lower z
-    @background_image.draw(0, 0, ZOrder::BACKGROUND)
     @seashells.each { |seashell| seashell.draw }
     @powerups.each { |powerup| powerup.draw }
-    @font.draw("Score: #{@player.score}", 10, 10, ZOrder::UI, 1.0, 1.0, Gosu::Color::BLACK)
-    @font.draw("Health: #{@player.health}", 10, 30, ZOrder::UI, 1.0, 1.0, Gosu::Color::BLACK)
+    if @game_over == false
+      @game_screen.draw
+      @font.draw("Score: #{@player.score}", 10, 10, ZOrder::UI, 1.0, 1.0, Gosu::Color::BLACK)
+      @font.draw("Health: #{@player.health}", 10, 30, ZOrder::UI, 1.0, 1.0, Gosu::Color::BLACK)
+    else
+      @game_over_screen.draw
+      @font.draw("Score: #{@player.score}", 500, 360, ZOrder::UI, 1.0, 1.0, Gosu::Color::BLACK)
+    end
   end
 
   def button_down(id)
@@ -98,7 +106,6 @@ class Tutorial < Gosu::Window
       super
     end
   end
-
 end
 
 class Doctor
@@ -219,6 +226,7 @@ class Player
   def game_over
     if @health < 0
       puts "Health: GAME OVER"
+      @game_over = true
     end
   end
 
@@ -289,7 +297,7 @@ class Seashell
 
   def draw
     img = @animation[Gosu.milliseconds / 100 % @animation.size]
-    img.draw_rot(@x, @y, 0, 50 * Math.sin(Gosu.milliseconds / 133.7))
+    img.draw_rot(@x, @y, ZOrder::UI, 50 * Math.sin(Gosu.milliseconds / 133.7))
     # img.draw(@x - img.width / 2.0, @y - img.height / 2.0, ZOrder::SEASHELLS, 1, 1, @color, :add)
   end
 end
@@ -306,7 +314,7 @@ class HealthPowerup
 
   def draw
     img = @animation[Gosu.milliseconds / 100 % @animation.size]
-    img.draw_rot(@x, @y, 0, 50 * Math.sin(Gosu.milliseconds / 133.7))
+    img.draw_rot(@x, @y, ZOrder::UI, 50 * Math.sin(Gosu.milliseconds / 133.7))
   end
 
   def timer
@@ -330,7 +338,7 @@ class DoublePointsPowerup
 
   def draw
     img = @animation[Gosu.milliseconds / 100 % @animation.size]
-    img.draw_rot(@x, @y, 0, 50 * Math.sin(Gosu.milliseconds / 133.7))
+    img.draw_rot(@x, @y, ZOrder::UI, 50 * Math.sin(Gosu.milliseconds / 133.7))
   end
 
   def timer
@@ -354,7 +362,7 @@ class MagnetPowerup
 
   def draw
     img = @animation[Gosu.milliseconds / 100 % @animation.size]
-    img.draw_rot(@x, @y, 0, 50 * Math.sin(Gosu.milliseconds / 133.7))
+    img.draw_rot(@x, @y, ZOrder::UI, 50 * Math.sin(Gosu.milliseconds / 133.7))
   end
 
   def timer
@@ -363,6 +371,30 @@ class MagnetPowerup
 
   def update
     @timer += 1
+  end
+end
+
+class GameOverScreen
+  def initialize
+    @background_image = Gosu::Image.new("underwater2.png", :tileable => true)
+    @font = Gosu::Font.new(50)
+  end
+
+  def draw
+    @background_image.draw(0, 0, ZOrder::UI)
+    @font.draw("GAME OVER", 500, 300, ZOrder::UI, 1.0, 1.0, Gosu::Color::BLACK)
+  end
+end
+
+class GameScreen
+  def initialize
+    @background_image = Gosu::Image.new("underwater2.png", :tileable => true)
+  end
+
+  def draw
+    # upper left corner drawn at (0,0) with z ordering of 0
+    # higher z = drawn on top of lower z
+    @background_image.draw(0, 0, ZOrder::BACKGROUND)
   end
 end
 
